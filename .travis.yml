@@ -1,0 +1,32 @@
+language: generic
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t tallennav/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true tallennav/react-test npm test
+
+after_success:
+  - docker build -t tallennav/multi-client ./client
+  - docker build -t tallennav/multi-nginx ./nginx
+  - docker build -t tallennav/multi-server ./server
+  - docker build -t tallennav/multi-worker ./worker
+  - echo "$DOCKER_PASSWORD" | docker login "$DOCKER_ID" --password-stdin
+  - docker push tallennav/multi-client
+  - docker push tallennav/multi-nginx
+  - docker push tallennav/multi-server
+  - docker push tallennav/multi-worker
+# deploy:
+#   provider: elasticbeanstalk
+#   region: "us-east-2"
+#   app: "docker-react"
+#   env: "Dockerreact-env"
+#   bucket_name: "elasticbeanstalk-us-east-2-015531688271"
+#   bucket_path: "docker-react"
+#   on:
+#     branch: master
+#   access_key_id: $AWS_ACCESS_KEY
+#   secret_access_key: $AWS_SECRET_KEY
